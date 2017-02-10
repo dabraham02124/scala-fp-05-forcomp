@@ -35,7 +35,7 @@ object Anagrams {
    *  Note: you must use `groupBy` to implement this method!
    */
   def wordOccurrences(w: Word): Occurrences = 
-    w.toLowerCase.filter(_.isLetter).groupBy(_.charValue()).toList.map(p => (p._1, p._2.length))
+    w.toLowerCase.filter(_.isLetter).groupBy(_.charValue()).toList.map(p => (p._1, p._2.length)).sortBy(_._1)
   
   /** Converts a sentence into its character occurrence list. */
   def sentenceOccurrences(s: Sentence): Occurrences = 
@@ -85,7 +85,27 @@ object Anagrams {
    *  Note that the order of the occurrence list subsets does not matter -- the subsets
    *  in the example above could have been displayed in some other order.
    */
-  def combinations(occurrences: Occurrences): List[Occurrences] = ???
+  def combinations(occurrences: Occurrences): List[Occurrences] = {
+    def getSublists(x:Occurrences): Occurrences =
+      x match {
+        case List((_, 1)) => x
+        case List((l, n)) => (l, n) :: getSublists(List((l, n-1)))
+      }
+
+    def prepend(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
+      acc.flatMap(a => for { ci <- o } yield ci :: a)
+
+    def smoosh(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
+      o.map(x => List(x)) ::: acc ::: prepend(o, acc)
+
+    def combinations(occurrences: Occurrences, acc: List[Occurrences]): List[Occurrences] =
+      occurrences match {
+        case List() => List(List()) ::: acc
+        case (x :: xs) => combinations(xs, smoosh(getSublists(List(x)), acc))
+      }
+
+    combinations(occurrences, List())
+  }
 
   /** Subtracts occurrence list `y` from occurrence list `x`.
    *
@@ -97,7 +117,20 @@ object Anagrams {
    *  Note: the resulting value is an occurrence - meaning it is sorted
    *  and has no zero-entries.
    */
-  def subtract(x: Occurrences, y: Occurrences): Occurrences = ???
+  def subtract(x: Occurrences, y: Occurrences): Occurrences = {
+    def subSubtract(o: (Char, Int), y: Occurrences): (Char, Int) = {
+      val y2 = y.filter(o._1 == _._1)
+      if (0 == y2.length) o else  (o._1, o._2 - y.filter(o._1 == _._1).head._2)
+    }
+
+    x match {
+      case List() => List()
+      case (x1 :: xs) => {
+        val ss = subSubtract(x1, y)
+        if (ss._2 == 0) subtract(xs, y) else ss :: subtract(xs, y)
+      }
+    }
+  }
 
   /** Returns a list of all anagram sentences of the given sentence.
    *

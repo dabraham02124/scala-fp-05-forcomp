@@ -10,8 +10,12 @@ object testing2 {
                                                   //> dict  : List[testing2.Word] = List(is, tea, eat, ate)
     
   def wordOccurrences(w: Word): Occurrences =
-    w.toLowerCase.filter(_.isLetter).groupBy(_.charValue()).toList.map(p => (p._1, p._2.length))
-                                                  //> wordOccurrences: (w: testing2.Word)testing2.Occurrences
+    w.toLowerCase
+    .filter(_.isLetter)
+    .groupBy(_.charValue())
+    .toList.map(p => (p._1, p._2.length))
+    .sortBy(_._1)                                 //> wordOccurrences: (w: testing2.Word)testing2.Occurrences
+
   def getSublists(x:Occurrences): Occurrences =
     x match {
       case List((_, 1)) => x
@@ -19,16 +23,16 @@ object testing2 {
     }                                             //> getSublists: (x: testing2.Occurrences)testing2.Occurrences
   val ms = getSublists(List(('m',2)))             //> ms  : testing2.Occurrences = List((m,2), (m,1))
   val hs = getSublists(List(('h',1)))             //> hs  : testing2.Occurrences = List((h,1))
-  val wo = wordOccurrences("tat")                 //> wo  : testing2.Occurrences = List((t,2), (a,1))
+  val wo = wordOccurrences("tat")                 //> wo  : testing2.Occurrences = List((a,1), (t,2))
   
-  def prepend(o: Occurrences, acc:List[Occurrences]): List[Occurrences] = {
+  def prepend(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
     acc.flatMap(a => for { ci <- o } yield ci :: a)
-  }                                               //> prepend: (o: testing2.Occurrences, acc: List[testing2.Occurrences])List[test
+                                                  //> prepend: (o: testing2.Occurrences, acc: List[testing2.Occurrences])List[test
                                                   //| ing2.Occurrences]
   
-  def smoosh(o: Occurrences, acc:List[Occurrences]): List[Occurrences] = {
+  def smoosh(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
     o.map(x => List(x)) ::: acc ::: prepend(o, acc)
-  }                                               //> smoosh: (o: testing2.Occurrences, acc: List[testing2.Occurrences])List[testi
+                                                  //> smoosh: (o: testing2.Occurrences, acc: List[testing2.Occurrences])List[testi
                                                   //| ng2.Occurrences]
   prepend(ms, List(hs))                           //> res0: List[testing2.Occurrences] = List(List((m,2), (h,1)), List((m,1), (h,1
                                                   //| )))
@@ -37,35 +41,37 @@ object testing2 {
                                                   //| )), List((m,2), (h,1)), List((m,1), (h,1)))
                                                   
   def combinations(occurrences: Occurrences): List[Occurrences] = {
-    def combinations(occurrences: Occurrences, acc: List[Occurrences]): List[Occurrences] = {
-    println("occ = "+occurrences+", acc = "+acc)
+    def combinations(occurrences: Occurrences, acc: List[Occurrences]): List[Occurrences] =
       occurrences match {
         case List() => List(List()) ::: acc
-        case (x :: xs) => {
-          val sl = getSublists(List(x))
-          println("x = "+x+", sl = "+sl+", acc = "+acc+ ", smoosh = "+smoosh(sl, acc))
-          combinations(xs, smoosh(sl, acc))
-        }
+        case (x :: xs) => combinations(xs, smoosh(getSublists(List(x)), acc))
       }
-    }
-    combinations(occurrences, List()).toSet.toList
+
+    combinations(occurrences, List())
   }                                               //> combinations: (occurrences: testing2.Occurrences)List[testing2.Occurrences]
                                                   //| 
   
-  wordOccurrences("tat")                          //> res3: testing2.Occurrences = List((t,2), (a,1))
-  combinations(wordOccurrences("baba"))           //> occ = List((b,2), (a,2)), acc = List()
-                                                  //| x = (b,2), sl = List((b,2), (b,1)), acc = List(), smoosh = List(List((b,2))
-                                                  //| , List((b,1)))
-                                                  //| occ = List((a,2)), acc = List(List((b,2)), List((b,1)))
-                                                  //| x = (a,2), sl = List((a,2), (a,1)), acc = List(List((b,2)), List((b,1))), s
-                                                  //| moosh = List(List((a,2)), List((a,1)), List((b,2)), List((b,1)), List((a,2)
-                                                  //| , (b,2)), List((a,1), (b,2)), List((a,2), (b,1)), List((a,1), (b,1)))
-                                                  //| occ = List(), acc = List(List((a,2)), List((a,1)), List((b,2)), List((b,1))
-                                                  //| , List((a,2), (b,2)), List((a,1), (b,2)), List((a,2), (b,1)), List((a,1), (
-                                                  //| b,1)))
-                                                  //| res4: List[testing2.Occurrences] = List(List((a,1)), List((b,1)), List((b,2
-                                                  //| )), List((a,1), (b,1)), List(), List((a,2), (b,1)), List((a,2)), List((a,1)
-                                                  //| , (b,2)), List((a,2), (b,2)))
+  wordOccurrences("tat")                          //> res3: testing2.Occurrences = List((a,1), (t,2))
+  combinations(wordOccurrences("baba"))           //> res4: List[testing2.Occurrences] = List(List(), List((b,2)), List((b,1)), L
+                                                  //| ist((a,2)), List((a,1)), List((b,2), (a,2)), List((b,1), (a,2)), List((b,2)
+                                                  //| , (a,1)), List((b,1), (a,1)))
 
+  def subtract(x: Occurrences, y: Occurrences): Occurrences = {
+    def subSubtract(o: (Char, Int), y: Occurrences): (Char, Int) = {
+      val y2 = y.filter(o._1 == _._1)
+      if (0 == y2.length) o else  (o._1, o._2 - y.filter(o._1 == _._1).head._2)
+    }
+
+    x match {
+      case List() => List()
+      case (x1 :: xs) => {
+        val ss = subSubtract(x1, y)
+        if (ss._2 == 0) subtract(xs, y) else ss :: subtract(xs, y)
+      }
+    }
+  }                                               //> subtract: (x: testing2.Occurrences, y: testing2.Occurrences)testing2.Occurr
+                                                  //| ences
+  subtract(wordOccurrences("tsat"), wordOccurrences("ta"))
+                                                  //> res5: testing2.Occurrences = List((s,1), (t,1))
  
 }
