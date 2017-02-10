@@ -93,7 +93,7 @@ object Anagrams {
       }
 
     def prepend(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
-      acc.flatMap(a => for { ci <- o } yield ci :: a)
+      acc.flatMap(a => for { ci <- o } yield (ci :: a).sortBy(_._1))
 
     def smoosh(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
       o.map(x => List(x)) ::: acc ::: prepend(o, acc)

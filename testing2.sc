@@ -26,7 +26,7 @@ object testing2 {
   val wo = wordOccurrences("tat")                 //> wo  : testing2.Occurrences = List((a,1), (t,2))
   
   def prepend(o: Occurrences, acc:List[Occurrences]): List[Occurrences] =
-    acc.flatMap(a => for { ci <- o } yield ci :: a)
+    acc.flatMap(a => for { ci <- o } yield (ci :: a).sortBy(_._1))
                                                   //> prepend: (o: testing2.Occurrences, acc: List[testing2.Occurrences])List[test
                                                   //| ing2.Occurrences]
   
@@ -34,11 +34,11 @@ object testing2 {
     o.map(x => List(x)) ::: acc ::: prepend(o, acc)
                                                   //> smoosh: (o: testing2.Occurrences, acc: List[testing2.Occurrences])List[testi
                                                   //| ng2.Occurrences]
-  prepend(ms, List(hs))                           //> res0: List[testing2.Occurrences] = List(List((m,2), (h,1)), List((m,1), (h,1
+  prepend(ms, List(hs))                           //> res0: List[testing2.Occurrences] = List(List((h,1), (m,2)), List((h,1), (m,1
                                                   //| )))
   smoosh(ms, List())                              //> res1: List[testing2.Occurrences] = List(List((m,2)), List((m,1)))
   smoosh(ms, List(hs))                            //> res2: List[testing2.Occurrences] = List(List((m,2)), List((m,1)), List((h,1
-                                                  //| )), List((m,2), (h,1)), List((m,1), (h,1)))
+                                                  //| )), List((h,1), (m,2)), List((h,1), (m,1)))
                                                   
   def combinations(occurrences: Occurrences): List[Occurrences] = {
     def combinations(occurrences: Occurrences, acc: List[Occurrences]): List[Occurrences] =
@@ -52,9 +52,9 @@ object testing2 {
                                                   //| 
   
   wordOccurrences("tat")                          //> res3: testing2.Occurrences = List((a,1), (t,2))
-  combinations(wordOccurrences("baba"))           //> res4: List[testing2.Occurrences] = List(List(), List((b,2)), List((b,1)), L
-                                                  //| ist((a,2)), List((a,1)), List((b,2), (a,2)), List((b,1), (a,2)), List((b,2)
-                                                  //| , (a,1)), List((b,1), (a,1)))
+  combinations(wordOccurrences("abba"))           //> res4: List[testing2.Occurrences] = List(List(), List((b,2)), List((b,1)), L
+                                                  //| ist((a,2)), List((a,1)), List((a,2), (b,2)), List((a,2), (b,1)), List((a,1)
+                                                  //| , (b,2)), List((a,1), (b,1)))
 
   def subtract(x: Occurrences, y: Occurrences): Occurrences = {
     def subSubtract(o: (Char, Int), y: Occurrences): (Char, Int) = {
